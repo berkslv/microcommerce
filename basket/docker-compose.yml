@@ -1,0 +1,97 @@
+version: "3"
+
+services:
+  # MySql Database for keycloak service
+  mc-mysql-keycloak:
+    container_name: mc-mysql-keycloak
+    image: mysql:8.0.31
+    volumes:
+      - ../data/mc-mysql-keycloak:/var/lib/mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: keycloak
+      MYSQL_USER: keycloak
+      MYSQL_PASSWORD: password
+    networks:
+      - mc-network
+
+  # Keycloak identity service
+  mc-keycloak:
+    container_name: mc-keycloak
+    image: quay.io/keycloak/keycloak:18.0.0
+    command: [ "start-dev" ]
+    environment:
+      KEYCLOAK_IMPORT: ../data/keycloak/realm-export.json
+      DB_VENDOR: MYSQL
+      DB_ADDR: mc-mysql-keycloak
+      DB_DATABASE: keycloak
+      DB_USER: keycloak
+      DB_PASSWORD: password
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+    ports:
+      - "8080:8080"
+    volumes:
+      - ../data/keycloak/volume/:/opt/keycloak/data/
+    depends_on:
+      - mc-mysql-keycloak
+    networks:
+      - mc-network
+
+  ## Discovery service
+  mc-discovery:
+    image: mc-discovery
+    container_name: mc-discovery
+    platform: linux/amd64
+    ports:
+      - "8761:8761"
+    networks:
+      - mc-network
+
+  ## MongoDB for basket service
+  mc-mongo-basket:
+    container_name: mc-mongo-basket
+    image: mongo:4.0.10
+    restart: always
+    ports:
+      - "27018:27017"
+    expose:
+      - "27018"
+    volumes:
+      - ../data/mongo-basket:/data/db
+    networks:
+      - mc-network
+
+  # MySql Database for basket service
+  mc-redis:
+    container_name: mc-redis
+    image: redis:6.2-alpine
+    restart: always
+    ports:
+      - '6379:6379'
+    command: redis-server --save 20 1 --loglevel warning --requirepass eYVX7EwVmmxKPCDmwMtyKVge8oLd2t81
+    volumes:
+      - ../data/mc-redis/:/data
+
+  ## MongoDB for product service
+  mc-mongo-product:
+    container_name: mc-mongo-product
+    image: mongo:4.0.10
+    restart: always
+    ports:
+      - "27017:27017"
+    expose:
+      - "27017"
+    volumes:
+      - ../data/mongo-product/:/data/db
+    networks:
+      - mc-network
+
+
+networks:
+  mc-network:
+    driver: bridge
+
+volumes:
+  mc-data:
+    driver: local

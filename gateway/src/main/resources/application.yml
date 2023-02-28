@@ -1,0 +1,33 @@
+eureka:
+  client:
+    service-url:
+      defaultZone: http://eureka:password@localhost:8761/eureka
+server:
+  port: 8181
+spring:
+  application:
+    name: gateway
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://mc-keycloak:8080/realms/mc-realm
+  cloud:
+    gateway:
+      routes:
+        - id: product
+          uri: lb://product
+          predicates:
+            - Path=/api/products/**
+        - id: category
+          uri: lb://product
+          predicates:
+            - Path=/api/categories/**
+        - id: brand
+          uri: lb://product
+          predicates:
+            - Path=/api/brands/**
+        - id: basket
+          uri: lb://basket
+          predicates:
+            - Path=/api/baskets/**

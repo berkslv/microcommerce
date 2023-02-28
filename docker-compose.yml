@@ -1,0 +1,148 @@
+version: "3"
+
+services:
+    # MySql Database for keycloak service
+    mc-mysql-keycloak:
+      container_name: mc-mysql-keycloak
+      image: mysql:8.0.31
+      volumes:
+        - ./data/mc-mysql-keycloak:/var/lib/mysql
+      environment:
+        MYSQL_ROOT_PASSWORD: root
+        MYSQL_DATABASE: keycloak
+        MYSQL_USER: keycloak
+        MYSQL_PASSWORD: password
+      networks:
+        - mc-network
+
+    # Keycloak identity service
+    mc-keycloak:
+      container_name: mc-keycloak
+      image: quay.io/keycloak/keycloak:18.0.0
+      command: [ "start-dev", "--import-realm" ]
+      environment:
+        DB_VENDOR: MYSQL
+        DB_ADDR: mysql
+        DB_DATABASE: keycloak
+        DB_USER: keycloak
+        DB_PASSWORD: password
+        KEYCLOAK_ADMIN: admin
+        KEYCLOAK_ADMIN_PASSWORD: admin
+      ports:
+        - "8080:8080"
+      volumes:
+        - ./keycloak/:/opt/keycloak/data/import/
+      depends_on:
+        - mc-mysql-keycloak
+      networks:
+        - mc-network
+
+    ## Discovery service
+    mc-discovery:
+      image: mc-discovery
+      container_name: mc-discovery
+      platform: linux/amd64
+      ports:
+        - "8761:8761"
+      networks:
+        - mc-network
+    
+    ## MongoDB for product service
+    mc-mongo:
+      container_name: mc-mongo
+      image: mongo:4.0.10
+      restart: always
+      ports:
+        - "27017:27017"
+      expose:
+        - "27017"
+      volumes:
+        - ./data/mongo-product:/data/db
+      networks:
+        - mc-network
+
+    ## API Gateway
+    mc-gateway:
+      container_name: mc-gateway
+      image: mc-gateway
+      ports:
+        - "8181:8181"
+      expose:
+        - "8181"
+      environment:
+        - SPRING_PROFILES_ACTIVE=docker
+      depends_on:
+        - mc-discovery
+      networks:
+        - mc-network
+
+    ## Product service
+    mc-product:
+      container_name: mc-product
+      image: mc-product
+      environment:
+        - SPRING_PROFILES_ACTIVE=docker
+      ports:
+        - "8081:8081"
+      expose:
+        - "8081"
+      depends_on:
+        - mc-mongo
+        - mc-discovery
+        - mc-gateway
+      networks:
+        - mc-network
+
+networks:
+  mc-network:
+    driver: bridge
+
+volumes:
+    mc-data:
+        driver: local
+
+#    elasticsearch:
+#      image: docker.elastic.co/elasticsearch/elasticsearch:8.3.3
+#      container_name: mc-elasticsearch
+#      environment:
+#          - bootstrap.memory_lock=true
+#          - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+#          - "discovery.type=single-node"
+#          - xpack.security.enabled=false
+#      ports:
+#          - "9200:9200"
+#      volumes:
+#          - mc-data:/usr/share/elasticsearch/data
+#      networks:
+#          - mc-network
+#
+#    kibana:
+#      image: docker.elastic.co/kibana/kibana:8.3.3
+#      container_name: mc-kibana
+#      ports:
+#          - "5601:5601"
+#      environment:
+#          ELASTICSEARCH_URL: http://elasticsearch:9200
+#          ELASTICSEARCH_HOSTS: '["http://elasticsearch:9200"]'
+#      depends_on:
+#          - elasticsearch
+#      networks:
+#          - mc-network
+#
+#    logstash:
+#      image: docker.elastic.co/logstash/logstash:8.3.3
+#      container_name: mc-logstash
+#      volumes:
+#        - ./logstash/config/logstash.yml:/usr/share/logstash/config/logstash.yml:ro
+#        - ./logstash/pipeline:/usr/share/logstash/pipeline:ro
+#      ports:
+#        - "5044:5044"
+#        - "5000:5000/tcp"
+#        - "5000:5000/udp"
+#        - "9600:9600"
+#      environment:
+#        LS_JAVA_OPTS: "-Xmx256m -Xms256m"
+#      networks:
+#        - mc-network
+#      depends_on:
+#        - elasticsearch

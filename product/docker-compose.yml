@@ -1,0 +1,70 @@
+version: "3"
+
+services:
+  # MySql Database for keycloak service
+  mc-mysql-keycloak:
+    container_name: mc-mysql-keycloak
+    image: mysql:8.0.31
+    volumes:
+      - ../data/mc-mysql-keycloak:/var/lib/mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: keycloak
+      MYSQL_USER: keycloak
+      MYSQL_PASSWORD: password
+    networks:
+      - mc-network
+
+  # Keycloak identity service
+  mc-keycloak:
+    container_name: mc-keycloak
+    image: quay.io/keycloak/keycloak:18.0.0
+    command: [ "start-dev", "--import-realm" ]
+    environment:
+      DB_VENDOR: MYSQL
+      DB_ADDR: mysql
+      DB_DATABASE: keycloak
+      DB_USER: keycloak
+      DB_PASSWORD: password
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+    ports:
+      - "8080:8080"
+    volumes:
+      - ../data/keycloak/:/opt/keycloak/data/import/
+    depends_on:
+      - mc-mysql-keycloak
+    networks:
+      - mc-network
+
+  ## Discovery service
+  mc-discovery:
+    image: mc-discovery
+    container_name: mc-discovery
+    platform: linux/amd64
+    ports:
+      - "8761:8761"
+    networks:
+      - mc-network
+
+  ## MongoDB for product service
+  mc-mongo-product:
+    container_name: mc-mongo-product
+    image: mongo:4.0.10
+    restart: always
+    ports:
+      - "27017:27017"
+    expose:
+      - "27017"
+    volumes:
+      - ../data/mongo-product:/data/db
+    networks:
+      - mc-network
+
+networks:
+  mc-network:
+    driver: bridge
+
+volumes:
+  mc-data:
+    driver: local
