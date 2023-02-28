@@ -15,3 +15,5 @@ Proje henüz geliştirilme aşamasındadır. Aktif olarak aşağıdaki özellikl
 - [ ] Kafka
 - [ ] Notification service
 - [ ] Elastic log stack
+
+![Architecture](./docs/Architecture.jpg "Architecture")
