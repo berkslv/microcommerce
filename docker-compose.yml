@@ -1,9 +1,64 @@
 version: "3"
 
 services:
+  ##------------------------------------------------------------- Elastic log stack
+  # ## Elastic search
+  # mc-elasticsearch:
+  #   image: docker.elastic.co/elasticsearch/elasticsearch:8.3.3
+  #   container_name: mc-elasticsearch
+  #   restart: always
+  #   environment:
+  #       - bootstrap.memory_lock=true
+  #       - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+  #       - "discovery.type=single-node"
+  #       - xpack.security.enabled=false
+  #   ports:
+  #       - "9200:9200"
+  #   volumes:
+  #       - mc-data:/usr/share/elasticsearch/data
+  #   networks:
+  #       - mc-network
+  # 
+  # ## Kibana
+  # mc-kibana:
+  #   image: docker.elastic.co/kibana/kibana:8.3.3
+  #   container_name: mc-kibana
+  #   restart: always
+  #   ports:
+  #       - "5601:5601"
+  #   environment:
+  #       ELASTICSEARCH_URL: http://elasticsearch:9200
+  #       ELASTICSEARCH_HOSTS: '["http://elasticsearch:9200"]'
+  #   depends_on:
+  #       - mc-elasticsearch
+  #   networks:
+  #       - mc-network
+  # 
+  # ## Logstash
+  # mc-logstash:
+  #   image: docker.elastic.co/logstash/logstash:8.3.3
+  #   container_name: mc-logstash
+  #   restart: always
+  #   volumes:
+  #     - ./logstash/config/logstash.yml:/usr/share/logstash/config/logstash.yml:ro
+  #     - ./logstash/pipeline:/usr/share/logstash/pipeline:ro
+  #   ports:
+  #     - "5044:5044"
+  #     - "5000:5000/tcp"
+  #     - "5000:5000/udp"
+  #     - "9600:9600"
+  #   environment:
+  #     LS_JAVA_OPTS: "-Xmx256m -Xms256m"
+  #   networks:
+  #     - mc-network
+  #   depends_on:
+  #     - mc-elasticsearch
+
+  ##------------------------------------------------------------- Keycloak
   # MySql Database for keycloak service
   mc-mysql-keycloak:
     container_name: mc-mysql-keycloak
+    restart: always
     image: mysql:8.0.31
     volumes:
       - ./data/mc-mysql-keycloak:/var/lib/mysql
@@ -19,6 +74,7 @@ services:
   mc-keycloak:
     container_name: mc-keycloak
     image: quay.io/keycloak/keycloak:18.0.0
+    restart: always
     command: [ "start-dev" ]
     environment:
       KEYCLOAK_IMPORT: ../data/keycloak/realm-export.json
@@ -38,10 +94,12 @@ services:
     networks:
       - mc-network
   
+  ##------------------------------------------------------------- Kafka
   ## Kafka orchestration service
-  zookeeper:
+  mc-zookeeper:
     image: confluentinc/cp-zookeeper:7.0.1
-    container_name: zookeeper
+    container_name: mc-zookeeper
+    restart: always
     ports:
       - "2181:2181"
     environment:
@@ -51,13 +109,14 @@ services:
       - mc-network
 
   ## Kafka service
-  broker:
+  mc-broker:
     image: confluentinc/cp-kafka:7.0.1
-    container_name: broker
+    container_name: mc-broker
     ports:
       - "9092:9092"
     depends_on:
-      - zookeeper"
+      - mc-zookeeper
+    restart: always
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
@@ -69,16 +128,7 @@ services:
     networks:
       - mc-network
 
-  ## Discovery service
-  mc-discovery:
-    image: mc-discovery
-    container_name: mc-discovery
-    platform: linux/amd64
-    ports:
-      - "8761:8761"
-    networks:
-      - mc-network
-  
+  ##------------------------------------------------------------- Databases
   ## MongoDB for product service
   mc-mongo:
     container_name: mc-mongo
@@ -103,6 +153,38 @@ services:
     command: redis-server --save 20 1 --loglevel warning --requirepass eYVX7EwVmmxKPCDmwMtyKVge8oLd2t81
     volumes:
       - ./data/mc-redis/:/data
+    networks:
+      - mc-network
+
+  # MySql for order service
+  mc-mysql-order:
+    container_name: mc-mysql-order
+    image: mysql:8.0.31
+    restart: always
+    environment:
+      MYSQL_DATABASE: order
+      MYSQL_USER: orderuser
+      MYSQL_PASSWORD: "123456789"
+      MYSQL_ROOT_PASSWORD: "123456789"
+    ports:
+      - "3307:3306"
+    expose:
+      - "3307"
+    volumes:
+      - ./data/mysql-order:/var/lib/mysql
+    networks:
+      - mc-network
+
+  ##------------------------------------------------------------- Services
+  ## Discovery service
+  mc-discovery:
+    image: mc-discovery
+    container_name: mc-discovery
+    platform: linux/amd64
+    ports:
+      - "8761:8761"
+    networks:
+      - mc-network
 
   ## API Gateway
   mc-gateway:
@@ -142,9 +224,23 @@ services:
       - mc-redis
       - mc-discovery
       - mc-gateway
+      - mc-broker
     networks:
       - mc-network
-
+  
+  ## Order service
+  mc-order:
+    container_name: mc-order
+    image: mc-order
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    depends_on:
+      - mc-mysql-order
+      - mc-discovery
+      - mc-gateway
+      - mc-broker
+    networks:
+      - mc-network
 
 
 networks:
@@ -155,48 +251,4 @@ volumes:
     mc-data:
         driver: local
 
-#    elasticsearch:
-#      image: docker.elastic.co/elasticsearch/elasticsearch:8.3.3
-#      container_name: mc-elasticsearch
-#      environment:
-#          - bootstrap.memory_lock=true
-#          - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
-#          - "discovery.type=single-node"
-#          - xpack.security.enabled=false
-#      ports:
-#          - "9200:9200"
-#      volumes:
-#          - mc-data:/usr/share/elasticsearch/data
-#      networks:
-#          - mc-network
-#
-#    kibana:
-#      image: docker.elastic.co/kibana/kibana:8.3.3
-#      container_name: mc-kibana
-#      ports:
-#          - "5601:5601"
-#      environment:
-#          ELASTICSEARCH_URL: http://elasticsearch:9200
-#          ELASTICSEARCH_HOSTS: '["http://elasticsearch:9200"]'
-#      depends_on:
-#          - elasticsearch
-#      networks:
-#          - mc-network
-#
-#    logstash:
-#      image: docker.elastic.co/logstash/logstash:8.3.3
-#      container_name: mc-logstash
-#      volumes:
-#        - ./logstash/config/logstash.yml:/usr/share/logstash/config/logstash.yml:ro
-#        - ./logstash/pipeline:/usr/share/logstash/pipeline:ro
-#      ports:
-#        - "5044:5044"
-#        - "5000:5000/tcp"
-#        - "5000:5000/udp"
-#        - "9600:9600"
-#      environment:
-#        LS_JAVA_OPTS: "-Xmx256m -Xms256m"
-#      networks:
-#        - mc-network
-#      depends_on:
-#        - elasticsearch
+

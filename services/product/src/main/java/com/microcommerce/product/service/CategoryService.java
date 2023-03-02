@@ -36,7 +36,7 @@ public class CategoryService {
             throw new ApiException("Category not found with id: {0}", id);
         }
 
-        log.info("Category found with id: {0}", id);
+        log.info("Category found with id: " + id);
         return mapper.mapCategoryToCategoryResponse(optionalCategory.get());
     }
 
@@ -51,7 +51,7 @@ public class CategoryService {
     public CategoryResponse insert(CategoryRequest categoryRequest) {
         Category category = mapper.mapCategoryRequestToCategory(categoryRequest);
 
-        log.info("Category inserted with name: {0}", categoryRequest.getName());
+        log.info("Category inserted with name: " + categoryRequest.getName());
         return mapper.mapCategoryToCategoryResponse(repository.save(category));
     }
 
@@ -63,7 +63,7 @@ public class CategoryService {
         Category category = mapper.mapCategoryRequestToCategory(categoryRequest);
         category.setId(id);
 
-        log.info("Category updated with id: {0}", id);
+        log.info("Category updated with id: " + id);
         return mapper.mapCategoryToCategoryResponse(repository.save(category));
     }
 
@@ -74,7 +74,7 @@ public class CategoryService {
 
         repository.deleteById(id);
 
-        log.info("Category deleted with id: {0}", id);
+        log.info("Category deleted with id: " + id);
         return true;
     }
 }

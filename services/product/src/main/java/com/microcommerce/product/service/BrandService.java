@@ -32,7 +32,7 @@ public class BrandService {
             throw new ApiException("Brand not found with id: {0}", id);
         }
 
-        log.info("Brand found with id: {0}", id);
+        log.info("Brand found with id: " + id);
         return mapper.mapBrandToBrandResponse(optionalBrand.get());
     }
 
@@ -47,7 +47,7 @@ public class BrandService {
     public BrandResponse insert(BrandRequest brandRequest) {
         Brand brand = mapper.mapBrandRequestToBrand(brandRequest);
 
-        log.info("Brand inserted with name: {0}", brandRequest.getName());
+        log.info("Brand inserted with name: " + brandRequest.getName());
         return mapper.mapBrandToBrandResponse(repository.save(brand));
     }
 
@@ -59,7 +59,7 @@ public class BrandService {
         Brand brand = mapper.mapBrandRequestToBrand(brandRequest);
         brand.setId(id);
 
-        log.info("Brand updated with id: {0}", id);
+        log.info("Brand updated with id: " + id);
         return mapper.mapBrandToBrandResponse(repository.save(brand));
     }
 
@@ -70,7 +70,7 @@ public class BrandService {
 
         repository.deleteById(id);
 
-        log.info("Brand deleted with id: {0}", id);
+        log.info("Brand deleted with id: " + id);
         return true;
     }
 

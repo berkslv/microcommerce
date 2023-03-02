@@ -31,3 +31,7 @@ spring:
           uri: lb://basket
           predicates:
             - Path=/api/baskets/**
+        - id: order
+          uri: lb://order
+          predicates:
+            - Path=/api/orders/**

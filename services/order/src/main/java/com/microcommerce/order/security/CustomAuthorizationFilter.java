@@ -1,4 +1,4 @@
-package com.microcommerce.basket.security;
+package com.microcommerce.order.security;
 
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -45,12 +45,11 @@ public class CustomAuthorizationFilter extends OncePerRequestFilter {
                 Map<String,List> context = claims.getClaimValue("realm_access", Map.class);
                 List roles = context.get("roles");
                 String username = claims.getClaimValueAsString("preferred_username");
-                String email = claims.getClaimValueAsString("email");
                 Collection<SimpleGrantedAuthority> authorities = new ArrayList<>();
                 for (Object role: roles) {
                     authorities.add(new SimpleGrantedAuthority(role.toString().toUpperCase()));
                 }
-                var authenticationToken = new UsernamePasswordAuthenticationToken(username, email, authorities);
+                var authenticationToken = new UsernamePasswordAuthenticationToken(username, null, authorities);
                 SecurityContextHolder.getContext().setAuthentication(authenticationToken);
                 filterChain.doFilter(request, response);
             } catch (Exception exception) {

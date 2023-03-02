@@ -19,7 +19,13 @@ public class BasketController {
 
     private final BasketService basketService;
 
-    @GetMapping()
+    @GetMapping("/order-place")
+    public ResponseEntity<Boolean> orderPlace() {
+        Boolean result = basketService.orderPlace();
+        return ResponseEntity.status(HttpStatus.OK).body(result);
+    }
+
+    @GetMapping
     public ResponseEntity<BasketResponse> findById() {
         BasketResponse basketResponse = basketService.find();
         return ResponseEntity.status(HttpStatus.OK).body(basketResponse);

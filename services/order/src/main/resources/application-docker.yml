@@ -1,0 +1,14 @@
+eureka:
+  client:
+    service-url:
+      defaultZone: http://eureka:password@mc-discovery:8761/eureka
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    username: root
+    url: jdbc:mysql://mc-mysql-order:3307/order?autoReconnect=true&allowPublicKeyRetrieval=true&useSSL=false
+    password: '123456789'
+  kafka:
+    bootstrap-servers: mc-broker:9092
+server:
+  port: 0

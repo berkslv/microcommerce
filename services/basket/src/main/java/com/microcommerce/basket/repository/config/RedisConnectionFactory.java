@@ -1,5 +1,6 @@
 package com.microcommerce.basket.repository.config;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
@@ -11,12 +12,22 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
 @Configuration
 public class RedisConnectionFactory {
 
+    @Value("${mc-redis.host}")
+    private String host;
+
+    @Value("${mc-redis.port}")
+    private Integer port;
+
+    @Value("${mc-redis.password}")
+    private String password;
+
+
     @Bean
     public JedisConnectionFactory connectionFactory() {
         RedisStandaloneConfiguration configuration = new RedisStandaloneConfiguration();
-        configuration.setHostName("localhost");
-        configuration.setPort(6379);
-        configuration.setPassword("eYVX7EwVmmxKPCDmwMtyKVge8oLd2t81");
+        configuration.setHostName(host);
+        configuration.setPort(port);
+        configuration.setPassword(password);
         return new JedisConnectionFactory(configuration);
     }
 

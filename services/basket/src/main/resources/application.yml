@@ -5,6 +5,25 @@ eureka:
 spring:
   application:
     name: basket
+  kafka:
+    producer:
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties:
+        spring:
+          json:
+            type:
+              mapping: event:com.microcommerce.basket.domain.event.OrderPlacedEvent
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+    template:
+      default-topic: orderPlaceTopic
+    bootstrap-servers: localhost:9092
+
+mc-redis:
+  host: localhost
+  port: 6379
+  password: eYVX7EwVmmxKPCDmwMtyKVge8oLd2t81
+
+
 
 server:
   port: 8082

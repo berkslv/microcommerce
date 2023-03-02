@@ -2,10 +2,5 @@ eureka:
   client:
     service-url:
       defaultZone: http://eureka:password@mc-discovery:8761/eureka
-spring:
-  data:
-    mongodb:
-      uri: mongodb://mc-mongo:27017/products
-
 server:
-  port: 0
+  port: 8181

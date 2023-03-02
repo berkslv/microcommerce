@@ -35,6 +35,7 @@ public class ProductService {
 
         Product product = optionalProduct.get();
 
+        log.info("Product controlled is in stock id: " + id);
         return product.getStock() > 0;
     }
 
@@ -45,7 +46,7 @@ public class ProductService {
             throw new ApiException("Product not found with id: {0}", id);
         }
 
-        log.info("Product found with id: {0}", id);
+        log.info("Product found with id: " + id);
         return mapper.mapProductToProductResponse(optionalProduct.get());
     }
 
@@ -60,7 +61,7 @@ public class ProductService {
     public ProductResponse insert(ProductRequest productRequest) {
         Product product = mapper.mapProductRequestToProduct(productRequest);
 
-        log.info("Product inserted with name: {0}", productRequest.getName());
+        log.info("Product inserted with name: " + productRequest.getName());
         return mapper.mapProductToProductResponse(productRepository.save(product));
     }
 
@@ -72,7 +73,7 @@ public class ProductService {
         Product product = mapper.mapProductRequestToProduct(productRequest);
         product.setId(id);
 
-        log.info("Product updated with id: {0}", id);
+        log.info("Product updated with id: " + id);
         return mapper.mapProductToProductResponse(productRepository.save(product));
     }
 
@@ -82,7 +83,7 @@ public class ProductService {
         }
 
         productRepository.deleteById(id);
-        log.info("Product deleted with id: {0}", id);
+        log.info("Product deleted with id: " + id);
         return true;
     }
 }
