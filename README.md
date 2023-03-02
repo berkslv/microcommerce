@@ -13,7 +13,7 @@ docker-compose up -d
 
 ```
 
-This command runs all services in a docker enviroment. Docker images are pulled from my docker hub account.
+This command runs all services in a docker enviroment. Docker images are created with `mvn clean compile jib:dockerBuild` command. Just run this command in `./services/*`
 
 ## What are the services?
 
